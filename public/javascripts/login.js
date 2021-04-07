@@ -10,7 +10,7 @@ form.addEventListener('submit', (e) => {
 })
 
 submitBtn.addEventListener('click', async () => {
-    const res = await axios.put('http://localhost:3000/api/v1/user/login', {
+    const res = await axios.put(`${window.location.origin}/api/v1/user/login`, {
         email: email.value,
         password: password.value
     });
