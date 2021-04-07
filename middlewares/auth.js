@@ -1,7 +1,8 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const User = require('../models/user');
-var createError = require('http-errors')
+var createError = require('http-errors');
+const passport = require('passport');
 
 exports.protect = async (req, res, next) => {
     if (Date.now() - req.user.tokenExpiresIn > 100000000) {

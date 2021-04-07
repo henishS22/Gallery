@@ -17,5 +17,8 @@ module.exports = {
             useUnifiedTopology: true
         }
 
+    },
+    session: {
+        secret: 'keyboard cat'
     }
 }

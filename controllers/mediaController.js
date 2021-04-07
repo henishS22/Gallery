@@ -1,5 +1,8 @@
-const Media = require('../models/media');
-const { deleteFromS3 } = require('../services/image-delete-s3');
+// const { deleteFromS3 } = require('../services/image-delete-s3');
+const { addMedia, findMedia, deleteUserMedia, updateMedia, findUserMedia, favMedia } = require('../db-services/media-services');
+const { deleteMedia } = require('../services/image-delete');
+const { handleResponse, handleError } = require('../utils/requestHandlers');
+
 exports.addImage = async (req, res, next) => {
     try {
         if (req.files) {
@@ -10,77 +13,79 @@ exports.addImage = async (req, res, next) => {
                 req.body.mediaType = 'video'
             }
             for (let i = 0; i < req.files.length; i++) {
-
-                req.body.url = req.files[i].key;
+                req.body.url = req.files[i].filename;
                 req.body.user = req.user._id;
-                media.push(await Media.create(req.body));
+                media.push(await addMedia(req.body));
             }
-            res.send({
-                status: 'success',
-                data: media
-            })
+            handleResponse({ res, data: media });
         } else {
-            res.send('Please select File to Upload');
+            handleResponse({ res, data: 'Please select File to Upload' });
         }
     } catch (e) {
-        res.status(401).json({ message: e.message });
+        handleError({ res, data:e });
     }
 }
 
 exports.deleteImage = async (req, res, next) => {
     try {
 
-        const data = await Media.findById(req.query.id);
+        const data = await findMedia(req.query.id);
         if (!data) {
-            res.send('No media Found');
+            handleResponse({ res, data: data });
         }
-        await deleteFromS3('user-media', data.url);
-        const imgDelete = await Media.findOneAndDelete({ _id: data._id });
-        res.send(imgDelete);
+        await deleteMedia('users-media', data.url);
+        const imgDelete = await deleteUserMedia(data._id);
+        handleResponse({ res, data: imgDelete });
     } catch (e) {
-        res.status(401).json({ message: e.message });
+        handleError({ res, e });
     }
 }
 
 exports.addToFav = async (req, res, next) => {
     try {
-        const data = await Media.findById(req.body.id);
+        const data = await findMedia(req.body.id);
         if (!data) {
-            res.send('No Media Found')
+            handleResponse({ res, data: 'No media Found' });
         }
-        const fav = await Media.findOneAndUpdate({ _id: data._id }, { isFavourite: 'true' });
+        const fav = await updateMedia(data._id, { isFavourite: 'true' });
         if (fav) {
-            res.send(fav);
+            handleResponse({ res, data: fav });
         }
     } catch (e) {
-        res.status(401).json({ message: e.message });
+        handleError({ res, e });
     }
 }
 
 exports.removeFromFav = async (req, res, next) => {
     try {
-        const data = await Media.findById(req.body.id);
+        const data = await findMedia(req.body.id);
         if (!data) {
-            res.send('No Media Found')
+            handleResponse({ res, data: data });
         }
-        const fav = await Media.findOneAndUpdate({ _id: data._id }, { isFavourite: 'false' });
+        const fav = await updateMedia(data._id , { isFavourite: 'false' });
         if (fav) {
-            res.send(fav);
+            handleResponse({ res, data: fav });
         }
     } catch (e) {
-        res.status(401).json({ message: e.message });
+        handleError({ res, e });
     }
 }
 
 exports.showAllImg = async (req, res, next) => {
-    const data = await Media.find({ user: req.user._id });
-    res.status(201).json({
-        status: 'success',
-        Images: data
-    })
+    try {
+        const data = await findUserMedia(req.user._id);
+        handleResponse({ res, data: data });
+    } catch (e) {
+        handleError({ res, e });
+    }
 }
 
 exports.showFav = async (req, res, next) => {
-    const data = await Media.find({ user: req.user._id, isFavourite: 'true' });
+    try {
+        const data = await favMedia(req.user._id, 'true');
+        handleResponse({ res, data });
+    } catch (e) {
+        handleError({ res, e });
+    }
 }
 

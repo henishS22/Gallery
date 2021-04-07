@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const server = require('../server');
+const server = require('../config');
 const logger = require('../middlewares/logger');
 
 const db = mongoose.createConnection(server.db.str, server.db.options);

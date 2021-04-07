@@ -13,15 +13,7 @@ exports.uploadToS3 = (folderName) => {
     });
 
     const s3 = new aws.S3();
-
-    // const fileFilter = (req, file, cb) => {
-    //     if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
-    //         cb(null, true)
-    //     } else {
-    //         cb(new Error('Invalid Mime Type, only JPEG and PNG'), false);
-    //     }
-    // }
-
+    
     const upload = multer({
         storage: multerS3({
             s3: s3,

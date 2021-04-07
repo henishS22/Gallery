@@ -12,19 +12,16 @@ const btn = document.getElementById('btn');
 
 const fileUpload = (file) => {
     file1 = file.files[0];
-    console.log(file1);
 }
-
 
 btn.addEventListener('click', async () => {
     var bodyFormData = new FormData();
-    console.log(bodyFormData);
     bodyFormData.append('name', name1.value);
     bodyFormData.append('email', email.value);
     bodyFormData.append('password', password.value);
     if (file1) {
         if (file1.type == 'image/png' || file1.type == 'image/jpeg') {
-            bodyFormData.append('profile', file1);
+            bodyFormData.append('dp', file1);
         } else {
             bodyFormData = '';
             file1 = '';
@@ -32,13 +29,11 @@ btn.addEventListener('click', async () => {
             alert('Invalid File Format, Upload Image!');
         }
     }
-    console.log(bodyFormData);
     const data = await axios.post(`${window.location.origin}/api/v1/user/register`, bodyFormData)
-    console.log(data);
-    if (data.data.status == 'success') {
+    if (data.data.msg == 'Success') {
         alert('Registered Successfully');
         location.href = '/login'
-    } else if (data.data.status == 'fail') {
+    } else if (data.data.msg == 'fail') {
         alert('This Email is alreday Registered, Try to Login');
     }
 })

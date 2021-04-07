@@ -26,17 +26,17 @@ const logger = new winston.createLogger({
             ),
         })
     ],
-    exceptionHandlers: [
-        new winston.transports.File(
-          {
-            filename: './logs/exceptions.log',
-            timestamp: true,
-            maxsize: 5242880,
-            json: true,
-            colorize: true,
-          },
-        ),
-      ],
+    // exceptionHandlers: [
+    //     new winston.transports.File(
+    //       {
+    //         filename: './logs/exceptions.log',
+    //         timestamp: true,
+    //         maxsize: 5242880,
+    //         json: true,
+    //         colorize: true,
+    //       },
+    //     ),
+    //   ],
       exitOnError: false,
 })
 

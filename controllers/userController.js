@@ -1,85 +1,72 @@
-const User = require('../models/user');
-const app = require('../app');
 const jwt = require('jsonwebtoken');
-const { deleteFromS3 } = require('../services/image-delete-s3');
-
+const { handleError, handleResponse } = require('../utils/requestHandlers');
+const { findUserByEmail, createUser, updateUserByEmail, removeUserDp, findById, updateUserById } = require('../db-services/user-services');
+const userJoi = require('../middlewares/userValidation');
 
 exports.register = async (req, res, next) => {
     try {
+        
         if (req.file) {
-            req.body.dp = req.file.key;
+            req.body.dp = req.file.filename;
         }
-        const userExists = await User.findOne({ email: req.body.email });
+        const value = await userJoi.validateAsync(req.body);
+        const userExists = await findUserByEmail(value.email);
         if (!userExists) {
-            const user = await User.create(req.body);
-            res.send({
-                status: 'success',
-                data: user,
-            })
-
+            const user = await createUser(value);
+            delete user._doc.password;
+            handleResponse({ res, data: user });
         } else {
-            res.send({
-                status: 'fail',
-                message: 'This email is already registered'
-            });
+            handleResponse({ res, msg: 'fail' ,data: 'This email is already registered' });
         }
     } catch (e) {
-        // deleteFromS3('users-dp', req.file.key);
-        res.status(401).json({ message: e.message });
+        handleError({ res, data:e });
     }
 }
 
 exports.login = async (req, res, next) => {
     try {
-        const { email, password } = req.body;
-        const findUser = await User.findOne({ email });
+        const value = await userJoi.validateAsync(req.body);
+        const findUser = await findUserByEmail(value.email);
         if (!findUser) {
-            res.send({ status: 'Not Found', message: 'This email is not registered, please register First' });
+            handleResponse({ res, data: 'This email is not registered, please register First' });
+        } else {
+            const match = await findUser.correctPassword(value.password, findUser.password);
+            if (match == false) {
+                handleResponse({ res, data: 'Incorrect Password, Try Again !' });
+            } else {
+                const token = jwt.sign({ id: findUser._id }, process.env.JWT_SECRET);
+                const user = await updateUserByEmail(value.email, { userToken: token, tokenExpiresIn: Date.now() });
+                req.session.name = user._id;
+                handleResponse({ res, statusCode: 201, msg:'Logged In' ,data: user });
+            }
         }
-        const match = await findUser.correctPassword(password, findUser.password);
-        if (!match) {
-            res.send({ status: 'Incorrect Password', message: 'Incorrect Password, Try Again !' });
-        }
-        const token = jwt.sign({ id: findUser._id }, process.env.JWT_SECRET);
-        await User.updateOne({ email: email }, { userToken: token, tokenExpiresIn: Date.now() });
-        const user = await User.findOne({ email })
-        req.session.name = user._id;
-        res.status(201).json({
-            status: 'success',
-            message: "You are logged In",
-            user,
-        });
     } catch (e) {
-        res.status(401).json({ message: e.message });
+        handleError({ res, data:e });
     }
 }
 
 exports.info = async (req, res, next) => {
     try {
-        res.status(200).json({
-            data: req.user
-        })
+        const user = await findById(req.user._id);
+        handleResponse({ res, data: user });
     } catch (e) {
-        res.status(401).json({ message: e.message });
+        handleError({ res, e });
     }
 }
 
 exports.updateMe = async (req, res, next) => {
     try {
         if (req.file) {
-            req.body.dp = req.file.key;
+            req.body.dp = req.file.filename;
         }
-        const updated = await User.findOneAndUpdate({ _id: req.user._id }, req.body);
-        res.status(201).json({
-            status: 'success',
-            data: updated
-        })
+        const updated = await updateUserById(req.user._id, req.body);
+        handleResponse({ res, data: updated });
     } catch (e) {
-        res.status(401).json({ message: e.message });
+        handleError({ res, data:e });
     }
 }
 
 exports.removeDp = async (req, res, next) => {
-    const user = await User.findByIdAndUpdate({ _id: req.user._id }, { $unset: { dp: '' } });
-    res.send(user);
+    const user = await removeUserDp(req.user._id);
+    handleResponse({ res, data: user });
 }

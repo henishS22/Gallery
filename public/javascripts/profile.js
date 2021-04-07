@@ -50,6 +50,6 @@ removeDp.addEventListener('click', async () => {
                 Authorization: token
             }
         });
-    const id = ree.data._id;
+    const id = ree.data.data._id;
     location.href = `/profile?id=${id}`
 })

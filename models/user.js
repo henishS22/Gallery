@@ -28,7 +28,7 @@ const userSchema = new mongoose.Schema({
             }
         }
     },
-    dp:String,
+    dp: String,
     createdAt: {
         type: Date,
         default: Date.now()
@@ -37,13 +37,14 @@ const userSchema = new mongoose.Schema({
         type: Date,
         default: Date.now()
     },
+
     userToken: {
         type: String,
     },
-    tokenExpiresIn: {
+   tokenExpiresIn: {
         type: String,
     }
-}, {collection: 'Users'})
+}, { collection: 'Users' })
 
 userSchema.pre('save', async function (next) {
     this.password = await bcrypt.hash(this.password, 12);

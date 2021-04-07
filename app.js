@@ -6,10 +6,15 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 const cors = require('cors');
 const session = require('express-session');
+const flash = require('connect-flash');
+const passport = require('passport');
 
+const config = require('./config');
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/userRoutes');
 const mediaRouter = require('./routes/mediaRoutes');
+const LocalStorage  = require('passport-local');
+const User = require('./models/user');
 
 var app = express();
 
@@ -22,11 +27,40 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+app.use(flash());
 app.use(session({
-  secret: 'keyboard cat',
+  secret: config.session.secret,
   resave: false,
   saveUninitialized: true
 }));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+
+
+passport.use(new LocalStorage(
+  (username, password, done) => {
+    User.findOne({ email: username }).then(user => {
+      if (!user) {
+        return done(null, false, { message: 'No User Found' });
+      }
+      return done(null, user);
+    })
+  }
+))
+
+
+passport.serializeUser((user, done) => {
+  console.log("User serialised");
+  return done(null, user._id);
+});
+
+passport.deserializeUser((id, done) => {
+  return done(null, { id });
+});
+
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/profile', express.static('upload/images'));

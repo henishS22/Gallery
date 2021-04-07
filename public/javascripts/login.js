@@ -14,11 +14,10 @@ submitBtn.addEventListener('click', async () => {
         email: email.value,
         password: password.value
     });
-    console.log(res);
-    if (res.data.status == 'success') {
-        localStorage.setItem('Authorization', res.data.user.userToken);
-        alert(`${res.data.message}`);
-        location.href = `/gallery?user=${res.data.user._id}&type=img`;
+    if (res.status == 201) {
+        localStorage.setItem('Authorization', res.data.data.userToken);
+        alert(`${res.data.msg}`);
+        location.href = `/gallery?user=${res.data.data._id}&type=img`;
     } else if (res.data.status == 'Not Found') {
         noEmail.textContent = 'No user Found !';
         noPass.textContent = '';
